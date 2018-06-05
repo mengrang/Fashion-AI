@@ -376,7 +376,7 @@ class CPM_Model(object):
 
             self.stage_heatmap.append(self.current_heatmap)
 
-    # 这里参照cpm_hand做了修改
+
     def build_loss(self, lr, lr_decay_rate, lr_decay_step, optimizer='Adam'):
         self.gt_heatmap = self.gt_hmap_placeholder
         self.total_loss = 0
@@ -455,8 +455,6 @@ class CPM_Model(object):
                                                             optimizer=self.optimizer)
         self.merged_summary = tf.summary.merge_all()
 
-    # new learning rate setting method
-        # new learning rate setting method
 
     def build_loss3(self, optimizer='Adam'):
         self.gt_heatmap = self.gt_hmap_placeholder
