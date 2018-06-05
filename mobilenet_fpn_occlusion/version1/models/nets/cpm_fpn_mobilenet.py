@@ -33,7 +33,7 @@ class CPM_Model(object):
                                                shape=(None, input_size, input_size, 1),
                                                name='cmap_placeholder')
         self.gt_hmap_placeholder = tf.placeholder(dtype=tf.float32,
-                                                  shape=(None, heatmap_size, heatmap_size, num_joints),     # not the same with cpm_hand，hand里头加了1，为何？背景？
+                                                  shape=(None, heatmap_size, heatmap_size, num_joints), 
                                                   name='gt_hmap_placeholder')
         self.train_weights_placeholder = tf.placeholder(dtype=tf.float32,
                                                   shape=(None, num_joints),
@@ -113,7 +113,7 @@ class CPM_Model(object):
             sub_pool2 = tf.layers.max_pooling2d(inputs=sub_conv4,
                                                 pool_size=[2, 2],
                                                 strides=2,
-                                                padding='same',  # not the same with cpm_hand，padding方法不一样
+                                                padding='same',  
                                                 name='sub_pool2')
 
             sub_conv5 = tf.layers.conv2d(inputs=sub_pool2,
@@ -156,7 +156,7 @@ class CPM_Model(object):
             sub_pool3 = tf.layers.max_pooling2d(inputs=sub_conv8,
                                                 pool_size=[2, 2],
                                                 strides=2,
-                                                padding='same',  # not the same with cpm_hand，padding方法不一样
+                                                padding='same',  
                                                 name='sub_pool3')
 
             sub_conv9 = tf.layers.conv2d(inputs=sub_pool3,
@@ -307,10 +307,10 @@ class CPM_Model(object):
                                      name='conv1')
 
             self.stage_heatmap.append(tf.layers.conv2d(inputs=conv1,
-                                                       filters=self.num_joints,     # not the same with cpm_hand，hand里头加了1，为何？背景？
+                                                       filters=self.num_joints,    
                                                        kernel_size=[1, 1],
                                                        strides=[1, 1],
-                                                       padding='same',      # not the same with cpm_hand，padding方法不一样
+                                                       padding='same',    
                                                        kernel_initializer=tf.contrib.layers.xavier_initializer(),
                                                        name='stage_heatmap'))
 
@@ -380,7 +380,7 @@ class CPM_Model(object):
                                          name='mid_conv6')
 
             self.current_heatmap = tf.layers.conv2d(inputs=mid_conv6,
-                                                    filters=self.num_joints,  # not the same with cpm_hand，hand里头加了1，为何？背景？
+                                                    filters=self.num_joints,  
                                                     kernel_size=[1, 1],
                                                     strides=[1, 1],
                                                     padding='same',
@@ -389,7 +389,7 @@ class CPM_Model(object):
 
             self.stage_heatmap.append(self.current_heatmap)
 
-    # 这里参照cpm_hand做了修改
+    
     def build_loss(self, lr, lr_decay_rate, lr_decay_step, optimizer='Adam'):
         self.gt_heatmap = self.gt_hmap_placeholder
         self.total_loss = 0

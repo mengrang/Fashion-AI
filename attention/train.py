@@ -100,7 +100,6 @@ def train():
                                 num_joints=FLAGS.num_of_joints,
                                 img_type=FLAGS.color_channel,
                                 is_training=True)
-    # model.build_loss(FLAGS.init_lr, FLAGS.lr_decay_rate, FLAGS.lr_decay_step, optimizer='Adam')
     model.build_loss3(optimizer='Adam')
     print('=====Model Build=====\n')
 
@@ -152,8 +151,8 @@ def train():
             """
             # Read one batch data
 
-            batch_x_np, batch_gt_heatmap_np, batch_centermap, batch_weight_np = next(generator)
-            # print(batch_x_np.shape,batch_gt_heatmap_np.shape, batch_centermap.shape)
+            batch_x_np, batch_gt_heatmap_np, batch_centermap, batch_weight_np, batch_dm = next(generator)
+            
 
             if FLAGS.normalize_img:
                 # Normalize images
@@ -168,15 +167,15 @@ def train():
                                                                       FLAGS.joint_gaussian_variance,
                                                                       batch_joints_np)
             '''
-
             # Forward and update weights
             stage_losses_np, total_loss_np, _, summaries, current_lr, \
-            stage_heatmap_np, global_step = sess.run([model.stage_loss,
+            stage_heatmap_np,stage_dm, global_step = sess.run([model.stage_loss,
                                                       model.total_loss,
                                                       model.train_op,
                                                       merged_summary,
                                                       model.lr,
                                                       model.stage_heatmap,
+                                                      model.
                                                       model.global_step
                                                       ],
                                                      feed_dict={model.input_images: batch_x_np,
@@ -189,7 +188,7 @@ def train():
 
             # Write logs
             train_writer.add_summary(summaries, global_step)
-
+            '''
             if FLAGS.if_show:
                 # Draw intermediate results
                 if (global_step + 1) % FLAGS.img_show_iters == 0:
@@ -248,13 +247,13 @@ def train():
                                                    axis=1)
                         cv2.imshow('current heatmap', (upper_img * 255).astype(np.uint8))
                         cv2.waitKey(1000)
-
+            '''
             if (global_step + 1) % FLAGS.validation_iters == 0:
                 mean_val_loss = 0
                 cnt = 0
 
                 while cnt < 10:
-                    batch_x_np, batch_gt_heatmap_np, batch_centermap, batch_weight_np = next(generator_eval)
+                    batch_x_np, batch_gt_heatmap_np, batch_centermap, batch_weight_np, batch_dm = next(generator_eval)
 
                     # Normalize images
                     batch_x_np = batch_x_np / 255.0 - 0.5

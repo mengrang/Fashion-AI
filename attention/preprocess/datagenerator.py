@@ -356,22 +356,7 @@ class DataGenerator():
         new_j = new_j * to_size / (max_l + 0.0000001)
         return new_j.astype(np.int32)
 
-    def _rotate_augment(self, img, hm, max_rotation=45):
-        """ # TODO : IMPLEMENT DATA AUGMENTATION
-        """
-        if random.choice([0, 1]):
-            r_angle = np.random.randint(-1 * max_rotation, max_rotation)
-            img = transform.rotate(img, r_angle, preserve_range=True)
-            hm = transform.rotate(hm, r_angle)
-        #  +-----------------------------------------------------------------+
-        #  | mask                                                            |
-        #  |                                                                 |
-        #  |                                                                 |
-        #  +-----------------------------------------------------------------+
-        '''
-            dm_resized = transform.rotate(dm_resized, r_angle)
-        '''
-        return img, hm
+    
 
     
     def _rotate_augment(self, img, hm, dm, max_rotation=45):
@@ -383,98 +368,6 @@ class DataGenerator():
             hm = transform.rotate(hm, r_angle)
             dm =transform.rotate(dm,r_angle)
         return img, hm, dm
-
-
-    # input image size=512,out image size=512,input joints size = 512
-    def _size_augment(self, img, joints, train_weights, min_compress_ratio=0.7, max_compress_ratio=1.35):
-        aug_joints = np.copy(joints)
-        compress_ratio = np.random.uniform(min_compress_ratio, max_compress_ratio)
-        size = compress_ratio * img.shape[0]
-        size = round(size)
-
-        # img resize
-        resized_img = cv2.resize(img, (size, size))
-        resized_img_shape = resized_img.shape
-    #      +-----------------------------------------------------------------+
-        #  | mask                                                            |
-        #  |                                                                 |
-        #  |                                                                 |
-        #  +-----------------------------------------------------------------+
-        '''
-        resized_dm = cv2.resize(dm, (size, size))
-        resized_dm_shape = resized_dm.shape
-        '''
-        if compress_ratio <= 1.0:
-            # resized img padding to 512
-            img_x = resized_img_shape[0]
-            img_y = resized_img_shape[1]
-            img2 = np.zeros((512, 512, 3), dtype=np.float32)
-            img_x_padding = (512 - img_x) // 2
-            img_y_padding = (512 - img_y) // 2
-            img2[img_x_padding:img_x_padding + img_x, img_y_padding:img_y_padding + img_y, :] = resized_img[:, :, :]
-            aug_img = img2
-
-            # calculate relative joints after size augmentation
-            compress_coord = joints * compress_ratio  # refer to compressed img joints coordinate
-            hm_x_padding = img_x_padding
-            hm_y_padding = img_y_padding
-            aug_joints[:, 1] = compress_coord[:, 1] + hm_x_padding   # padding joints to 512
-            aug_joints[:, 0] = compress_coord[:, 0] + hm_y_padding
-            aug_joints = aug_joints * 64.0 / 512.0  # resize to 64
-            aug_joints = aug_joints.astype(np.int32)
-            # print('compress ratio', compress_ratio)
-
-        #  +-----------------------------------------------------------------+
-        #  | mask                                                            |
-        #  |                                                                 |
-        #  |                                                                 |
-        #  +-----------------------------------------------------------------+
-
-        '''
-            dm_x = resized_dm_shape[0]
-            dm_y = resized_dm_shape[1]
-            dm2 = np.zeros((512, 512, 3), dtype=np.float32)
-            dm_x_padding = (512 - dm_x) // 2
-            dm_y_padding = (512 - dm_y) // 2
-            dm2[dm_x_padding:dm_x_padding + dm_x, dm_y_padding:dm_y_padding + dm_y, :] = resized_dm[:, :, :]
-            aug_dm = dm2
-        '''
-        else:
-            img_x = resized_img_shape[0]
-            img_y = resized_img_shape[1]
-            img2 = np.zeros((512, 512, 3), dtype=np.float32)
-            img_x_padding = (img_x - 512) // 2
-            img_y_padding = (img_y - 512) // 2
-            img2[:, :, :] = resized_img[img_x_padding:img_x_padding + 512, img_y_padding:img_y_padding + 512, :]
-            aug_img = img2
-
-        '''
-            dm_x = resized_dm_shape[0]
-            dm_y = resized_dm_shape[1]
-            dm2 = np.zeros((512, 512, 3), dtype=np.float32)
-            dm_x_padding = (512 - dm_x) // 2
-            dm_y_padding = (512 - dm_y) // 2
-            dm2[dm_x_padding:dm_x_padding + dm_x, dm_y_padding:dm_y_padding + dm_y, :] = resized_dm[:, :, :]
-            aug_dm = dm2
-        '''
-            # calculate relative joints after size augmentation
-            compress_coord = joints * compress_ratio  # refer to compressed img joints coordinate
-            hm_x_padding = img_x_padding
-            hm_y_padding = img_y_padding
-            aug_joints[:, 1] = compress_coord[:, 1] - hm_x_padding  # padding joints to 512
-            aug_joints[:, 0] = compress_coord[:, 0] - hm_y_padding
-            aug_joints = aug_joints * 64.0 / 512.0  # resize to 64
-            aug_joints = aug_joints.astype(np.int32)
-
-            for elem in range(len(train_weights)):
-                if train_weights[elem] != -1:
-                    if aug_joints[elem][0] < 0 or aug_joints[elem][1] < 0 or \
-                       aug_joints[elem][0] > 64 or aug_joints[elem][1] > 64:
-                        train_weights[elem] = -1
-
-            # print('compress ratio', compress_ratio)
-        return aug_img, aug_joints, train_weights
-
 
 
 
@@ -508,15 +401,7 @@ class DataGenerator():
             aug_joints[:, 0] = compress_coord[:, 0] + hm_y_padding
             aug_joints = aug_joints * 64.0 / 512.0  # resize to 64
             aug_joints = aug_joints.astype(np.int32)
-            # print('compress ratio', compress_ratio)
-
-        #  +-----------------------------------------------------------------+
-        #  | mask                                                            |
-        #  |                                                                 |
-        #  |                                                                 |
-        #  +-----------------------------------------------------------------+
-
-        
+            # print('compress ratio', compress_ratio)  
             dm_x = resized_img_shape[0]
             dm_y = resized_img_shape[1]
             dm2 = np.zeros((512, 512, 3), dtype=np.float32)
@@ -713,14 +598,14 @@ class DataGenerator():
                 # generate heatmap and augment size
                 if random.choice([0, 1]) == 1:
                     new_j = self._relative_joints(cbox, padd, joints, to_size=512)
-                    img, new_j, train_weights[i] = self._size_augment(img, new_j, train_weights[i], 0.7, 1.35)
+                    img, new_j, train_weights[i], dm = self._size_augment(img, new_j, train_weights[i], 0.7, 1.35)
                     hm = self._generate_hm(64, 64, dress_type, new_j, 64, train_weights[i])
                 else:
                     new_j = self._relative_joints(cbox, padd, joints, to_size=64)
                     hm = self._generate_hm(64, 64, dress_type, new_j, 64, train_weights[i])
 
                 # rotate augmentation
-                img, hm = self._rotate_augment(img, hm)
+                img, hm, dm = self._rotate_augment(img, hm, dm)
 
                 for elem in range(len(train_weights[i])):
                     if train_weights[i][elem] == 1:
@@ -738,7 +623,7 @@ class DataGenerator():
                 train_gtmap[i] = hm
                 i = i + 1
 
-            yield train_img, train_gtmap, train_centermap, loss_weights
+            yield train_img, train_gtmap, train_centermap, loss_weights, dm
 
     def generator(self, batchSize=16, norm=False, sample='train'):
         """ Create a Sample Generator

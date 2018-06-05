@@ -38,6 +38,9 @@ class CPM_Model(object):
         self.train_weights_placeholder = tf.placeholder(dtype=tf.float32,
                                                   shape=(None, num_joints),
                                                   name='train_weights_placeholder')
+        self.dm_placeholder = tf.placeholder(dtype=tf.float32,
+                                                  shape=(None, heatmap_size, heatmap_size, num_joints),     
+                                                  name='dm_placeholder')
         self._build_model()
 
     def create_variables(self,shape, name, initializer=tf.contrib.layers.xavier_initializer(), is_fc_layer=False):
@@ -88,7 +91,7 @@ class CPM_Model(object):
             sub_pool1 = tf.layers.max_pooling2d(inputs=sub_conv2,
                                                 pool_size=[2, 2],
                                                 strides=2,
-                                                padding='same',  # not the same with cpm_hand，padding方法不一样
+                                                padding='same',  
                                                 name='sub_pool1')
 
             sub_conv3 = tf.layers.conv2d(inputs=sub_pool1,
@@ -113,7 +116,7 @@ class CPM_Model(object):
             sub_pool2 = tf.layers.max_pooling2d(inputs=sub_conv4,
                                                 pool_size=[2, 2],
                                                 strides=2,
-                                                padding='same',  # not the same with cpm_hand，padding方法不一样
+                                                padding='same',
                                                 name='sub_pool2')
 
             sub_conv5 = tf.layers.conv2d(inputs=sub_pool2,
@@ -305,7 +308,7 @@ class CPM_Model(object):
         with tf.variable_scope('stage_' + str(stage)):
             self.current_featuremap = tf.concat([self.stage_heatmap[stage - 2],
                                                  self.sub_stage_img_feature,
-                                                 self.center_map,  # hand这里被注释了，为何？
+                                                 self.center_map,  
                                                  ],
                                                 axis=3)
 
