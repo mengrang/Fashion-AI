@@ -6,6 +6,7 @@ class CPM_Model(object):
     def __init__(self, total_num, input_size, heatmap_size, batch_size, stages, num_joints, img_type= 'RGB', is_training=True):    # is_trainng not be used
         self.stages = stages
         self.stage_heatmap = []
+        self.stage_dm = []
         self.stage_loss = [0] * stages
         self.total_loss = 0
         self.input_image = None
@@ -41,6 +42,7 @@ class CPM_Model(object):
         self.dm_placeholder = tf.placeholder(dtype=tf.float32,
                                                   shape=(None, heatmap_size, heatmap_size, num_joints),     
                                                   name='dm_placeholder')
+        
         self._build_model()
 
     def create_variables(self,shape, name, initializer=tf.contrib.layers.xavier_initializer(), is_fc_layer=False):
@@ -61,6 +63,7 @@ class CPM_Model(object):
         return tf.nn.bias_add(conv, b)
 
     def _build_model(self):
+        self.stage_dm = self.dm_placeholder
         with tf.variable_scope('pooled_center_map'):
             self.center_map = tf.layers.average_pooling2d(inputs=self.cmap_placeholder,
                                                           pool_size=[9, 9],
@@ -293,7 +296,16 @@ class CPM_Model(object):
                                      kernel_initializer=tf.contrib.layers.xavier_initializer(),
                                      name='conv1')
 
-            self.stage_heatmap.append(tf.layers.conv2d(inputs=conv1,
+            conv2 = tf.layers.conv2d(inputs=conv2,
+                                    filters=self.num_joints,     
+                                    kernel_size=[1, 1],
+                                    strides=[1, 1],
+                                    padding='same',      
+                                    kernel_initializer=tf.contrib.layers.xavier_initializer(),
+                                    name='conv2')
+            multiply = conv2 * self.stage_dm
+
+            self.stage_heatmap.append(tf.layers.conv2d(inputs=multiply,
                                                        filters=self.num_joints,     
                                                        kernel_size=[1, 1],
                                                        strides=[1, 1],
@@ -366,13 +378,22 @@ class CPM_Model(object):
                                          kernel_initializer=tf.contrib.layers.xavier_initializer(),
                                          name='mid_conv6')
 
-            self.current_heatmap = tf.layers.conv2d(inputs=mid_conv6,
+            mid_conv7 = tf.layers.conv2d(inputs=mid_conv6,
+                                    filters=self.num_joints,     
+                                    kernel_size=[1, 1],
+                                    strides=[1, 1],
+                                    padding='same',      
+                                    kernel_initializer=tf.contrib.layers.xavier_initializer(),
+                                    name='mid_conv7')
+            mid_multiply = mid_conv7 * self.stage_dm
+
+            self.current_heatmap = tf.layers.conv2d(inputs=mid_multiply,
                                                     filters=self.num_joints,  
                                                     kernel_size=[1, 1],
                                                     strides=[1, 1],
                                                     padding='same',
                                                     kernel_initializer=tf.contrib.layers.xavier_initializer(),
-                                                    name='mid_conv7')
+                                                    name='mid_conv8')
 
             self.stage_heatmap.append(self.current_heatmap)
 

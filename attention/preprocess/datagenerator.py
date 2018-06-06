@@ -18,7 +18,7 @@ class DataGenerator():
     """
     def __init__(self, total_joints_list, blouse_joints_list, dress_joints_list, outwear_joints_list, skirt_joints_list,
                  trousers_joints_list, blouse_index, dress_index, outwear_index, skirt_index, trousers_index,
-                 img_dir, train_data_file):
+                 img_dir, dm_dir, train_data_file):
         """Initializer
             Args:
             joints_name			: List of joints condsidered
@@ -38,6 +38,7 @@ class DataGenerator():
         self.skirt_index = skirt_index
         self.trousers_index = trousers_index
         self.img_dir = img_dir
+        self.dm_dir = dm_dir
         self.train_data_file = train_data_file
         self.random_erase_flag = False
 
@@ -356,9 +357,7 @@ class DataGenerator():
         new_j = new_j * to_size / (max_l + 0.0000001)
         return new_j.astype(np.int32)
 
-    
-
-    
+  
     def _rotate_augment(self, img, hm, dm, max_rotation=45):
         """ # TODO : IMPLEMENT DATA AUGMENTATION
         """
@@ -569,6 +568,8 @@ class DataGenerator():
 
                 # 读图片
                 img = self.open_img(name)
+                #读dm
+                dm = self.open_dm()
 
                 # color aug
                 img = self._color_augment(img)
@@ -651,6 +652,24 @@ class DataGenerator():
         elif color == 'GRAY':
             img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
             return img
+        else:
+            print('Color mode supported: RGB/BGR. If you need another mode do it yourself :p')
+
+    def open_dm(self, name, color='GRAY'):
+        """ Open an dm
+        Args:
+            name	: Name of the sample
+            color	: Color Mode (RGB/BGR/GRAY)
+        """
+        dm = cv2.imread(os.path.join(self.dm_dir, name))
+        if color == 'RGB':
+            dm = cv2.cvtColor(dm, cv2.COLOR_BGR2RGB)
+            return dm
+        elif color == 'BGR':
+            return dm
+        elif color == 'GRAY':
+            dm = cv2.cvtColor(dm, cv2.COLOR_BGR2GRAY)
+            return dm
         else:
             print('Color mode supported: RGB/BGR. If you need another mode do it yourself :p')
 

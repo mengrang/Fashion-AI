@@ -169,18 +169,19 @@ def train():
             '''
             # Forward and update weights
             stage_losses_np, total_loss_np, _, summaries, current_lr, \
-            stage_heatmap_np,stage_dm, global_step = sess.run([model.stage_loss,
+            stage_heatmap_np, stage_dm, global_step = sess.run([model.stage_loss,
                                                       model.total_loss,
                                                       model.train_op,
                                                       merged_summary,
                                                       model.lr,
                                                       model.stage_heatmap,
-                                                      model.
+                                                      model.stage_dm,
                                                       model.global_step
                                                       ],
                                                      feed_dict={model.input_images: batch_x_np,
                                                                 model.cmap_placeholder: batch_centermap,
                                                                 model.gt_hmap_placeholder: batch_gt_heatmap_np,
+                                                                model.dm_placeholder: batch_dm,
                                                                 model.train_weights_placeholder: batch_weight_np})
 
             # Show training info
