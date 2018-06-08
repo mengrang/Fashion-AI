@@ -296,7 +296,7 @@ class CPM_Model(object):
                                      kernel_initializer=tf.contrib.layers.xavier_initializer(),
                                      name='conv1')
 
-            conv2 = tf.layers.conv2d(inputs=conv2,
+            conv2 = tf.layers.conv2d(inputs=conv1,
                                     filters=self.num_joints,     
                                     kernel_size=[1, 1],
                                     strides=[1, 1],

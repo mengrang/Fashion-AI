@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 import pandas as pd
 import numpy as np
 import cv2
@@ -18,7 +17,7 @@ class DataGenerator():
     """
     def __init__(self, total_joints_list, blouse_joints_list, dress_joints_list, outwear_joints_list, skirt_joints_list,
                  trousers_joints_list, blouse_index, dress_index, outwear_index, skirt_index, trousers_index,
-                 img_dir, dm_dir, train_data_file):
+                 img_dir, train_data_file, dm_dir):
         """Initializer
             Args:
             joints_name			: List of joints condsidered
@@ -169,20 +168,6 @@ class DataGenerator():
         for item in range(len(self.valid_set)):
             self.valid_dict[self.valid_set[item]] = self.data_dict[self.valid_set[item]]
 
-        '''
-        trainset_saver = open('trainset.txt','w')
-        trainset_saver.write(str(self.train_set))
-        trainset_saver.close()
-        traindict_saver = open('traindict.txt','w')
-        traindict_saver.write(str(self.train_dict))
-        traindict_saver.close()
-        validset_saver = open('validset.txt','w')
-        validset_saver.write(str(self.valid_set))
-        validset_saver.close()
-        validdict_saver = open('validdict.txt', 'w')
-        validdict_saver.write(str(self.valid_dict))
-        validdict_saver.close()
-        '''
 
     def _give_batch_name(self, batch_size=16, set='train'):
         """ Returns a List of Samples
@@ -357,18 +342,40 @@ class DataGenerator():
         new_j = new_j * to_size / (max_l + 0.0000001)
         return new_j.astype(np.int32)
 
-  
-    def _rotate_augment(self, img, hm, dm, max_rotation=45):
-        """ # TODO : IMPLEMENT DATA AUGMENTATION
+    # def _rotate_augment(self, img, max_rotation=45):
+    #     """ # TODO : IMPLEMENT DATA AUGMENTATION
+    #     """
+    #     r_angle = 0
+    #     if random.choice([0, 1]):
+    #         r_angle = np.random.randint(-1 * max_rotation, max_rotation)
+    #         img = transform.rotate(img, r_angle, preserve_range=True)
+    #     return img, r_angle
+
+    def rotate(self, image, angle, center=None, scale=1.0):
         """
+        a implemetation of rotation using cv2
+        """
+        (h, w) = image.shape[:2]
+        if center is None:
+            center = (w // 2, h // 2)
+
+        M = cv2.getRotationMatrix2D(center, angle, scale)
+
+        rotated = cv2.warpAffine(image, M, (w, h))
+        return rotated
+
+
+    def _rotate_augment(self, img, max_rotation=45):
+        """ 
+         TODO : IMPLEMENT DATA AUGMENTATION
+        """
+        r_angle = 0
+
         if random.choice([0, 1]):
             r_angle = np.random.randint(-1 * max_rotation, max_rotation)
-            img = transform.rotate(img, r_angle, preserve_range=True)
-            hm = transform.rotate(hm, r_angle)
-            dm =transform.rotate(dm,r_angle)
-        return img, hm, dm
-
-
+            #img = transform.rotate(img, r_angle, preserve_range=True)
+            img = self.rotate(img, r_angle)
+        return img, r_angle
 
     # input image size=512,out image size=512,input joints size = 512
     def _size_augment(self, img, joints, train_weights, min_compress_ratio=0.7, max_compress_ratio=1.35):
@@ -380,7 +387,7 @@ class DataGenerator():
         # img resize
         resized_img = cv2.resize(img, (size, size))
         resized_img_shape = resized_img.shape
-        resized_dm = cv2.resize(dm,(size,size))
+        # resized_dm = cv2.resize(dm,(size,size))
 
         if compress_ratio <= 1.0:
             # resized img padding to 512
@@ -401,13 +408,6 @@ class DataGenerator():
             aug_joints = aug_joints * 64.0 / 512.0  # resize to 64
             aug_joints = aug_joints.astype(np.int32)
             # print('compress ratio', compress_ratio)  
-            dm_x = resized_img_shape[0]
-            dm_y = resized_img_shape[1]
-            dm2 = np.zeros((512, 512, 3), dtype=np.float32)
-            dm_x_padding = (512 - dm_x) // 2
-            dm_y_padding = (512 - dm_y) // 2
-            dm2[dm_x_padding:dm_x_padding + dm_x, dm_y_padding:dm_y_padding + dm_y, :] = resized_dm[:, :, :]
-            aug_dm = dm2
         
         else:
             img_x = resized_img_shape[0]
@@ -417,15 +417,6 @@ class DataGenerator():
             img_y_padding = (img_y - 512) // 2
             img2[:, :, :] = resized_img[img_x_padding:img_x_padding + 512, img_y_padding:img_y_padding + 512, :]
             aug_img = img2
-
-        
-            dm_x = resized_img_shape[0]
-            dm_y = resized_img_shape[1]
-            dm2 = np.zeros((512, 512, 3), dtype=np.float32)
-            dm_x_padding = (512 - dm_x) // 2
-            dm_y_padding = (512 - dm_y) // 2
-            dm2[dm_x_padding:dm_x_padding + dm_x, dm_y_padding:dm_y_padding + dm_y, :] = resized_dm[:, :, :]
-            aug_dm = dm2
         
             # calculate relative joints after size augmentation
             compress_coord = joints * compress_ratio  # refer to compressed img joints coordinate
@@ -443,38 +434,66 @@ class DataGenerator():
                         train_weights[elem] = -1
 
             # print('compress ratio', compress_ratio)
-        return aug_img, aug_joints, train_weights, aug_dm
+        return aug_img, aug_joints, train_weights, compress_ratio
+
+    def _dm_size_augment(self, dm, compress_ratio):
+        size = compress_ratio * dm.shape[0]
+        size = round(size)
+        
+        # img resize
+        resized_dm = cv2.resize(dm,(size,size))
+        resized_dm_shape = resized_dm.shape
+
+        if compress_ratio <= 1.0:
+            
+            dm_x = resized_dm_shape[0]
+            dm_y = resized_dm_shape[1]
+            dm2 = np.zeros((512, 512, 3), dtype=np.float32)
+            dm_x_padding = (512 - dm_x) // 2
+            dm_y_padding = (512 - dm_y) // 2
+            dm2[dm_x_padding:dm_x_padding + dm_x, dm_y_padding:dm_y_padding + dm_y] = resized_dm[:, :]
+            aug_dm = dm2
+        
+        else:
+            dm_x = resized_dm_shape[0]
+            dm_y = resized_dm_shape[1]
+            dm2 = np.zeros((512, 512, 3), dtype=np.float32)
+            dm_x_padding = (512 - dm_x) // 2
+            dm_y_padding = (512 - dm_y) // 2
+            dm2[dm_x_padding:dm_x_padding + dm_x, dm_y_padding:dm_y_padding + dm_y] = resized_dm[:, :]
+            aug_dm = dm2
+        return aug_dm
 
 
 
-    def _color_augment(self,img):
+    def _color_augment(self, img):
         image = Image.fromarray(img)
         # image.show()
         # 亮度增强
         if random.choice([0, 1]):
             enh_bri = ImageEnhance.Brightness(image)
-            brightness = random.choice([0.5,0.8,1.2,1.5])
+            brightness = random.choice([0.5, 0.8, 1.2, 1.5])
             image = enh_bri.enhance(brightness)
             # image.show()
 
         # 色度增强
         if random.choice([0, 1]):
             enh_col = ImageEnhance.Color(image)
-            color = random.choice([0.5,0.8,1.2,1.5])
+            color = random.choice([0.5, 0.8, 1.2, 1.5])
             image = enh_col.enhance(color)
             # image.show()
 
         # 对比度增强
         if random.choice([0, 1]):
             enh_con = ImageEnhance.Contrast(image)
-            contrast = random.choice([0.5,0.8,1.2,1.5])
+            contrast = random.choice([0.5, 0.8, 1.2, 1.5])
             image = enh_con.enhance(contrast)
             # image.show()
 
         # 锐度增强
         if random.choice([0, 1]):
             enh_sha = ImageEnhance.Sharpness(image)
-            sharpness = random.choice([0.5,0.8,1.2,1.5])
+            sharpness = random.choice([0.5, 0.8, 1.2, 1.5])
             image = enh_sha.enhance(sharpness)
             # image.show()
 
@@ -485,7 +504,7 @@ class DataGenerator():
         img = np.asarray(image)
         return img
 
-    def _process_train_img_to_center512(self,img,joints):
+    def _process_train_img_to_center512(self, img, joints):
         img_shape = img.shape
         img_x = img_shape[0]
         img_y = img_shape[1]
@@ -546,6 +565,8 @@ class DataGenerator():
         Args:
             See Args section in self._generator
         """
+        dm_size = []
+        dm = []
         while True:
             train_img = np.zeros((batch_size, 512, 512, 3), dtype=np.float32)
             train_gtmap = np.zeros((batch_size, 64, 64, len(self.total_joints_list)), np.float32)
@@ -568,8 +589,6 @@ class DataGenerator():
 
                 # 读图片
                 img = self.open_img(name)
-                #读dm
-                dm = self.open_dm()
 
                 # color aug
                 img = self._color_augment(img)
@@ -599,15 +618,23 @@ class DataGenerator():
                 # generate heatmap and augment size
                 if random.choice([0, 1]) == 1:
                     new_j = self._relative_joints(cbox, padd, joints, to_size=512)
-                    img, new_j, train_weights[i], dm = self._size_augment(img, new_j, train_weights[i], 0.7, 1.35)
+                    img, new_j, train_weights[i],compress_ratio = self._size_augment(img, new_j, train_weights[i], 0.7, 1.35)
+                    for i in range(1,25):
+                        _dm = cv2.imread(os.path.join(self.dm_dir, 'heat' + str(i) + '.png'),0)
+                        _dm = self._dm_size_augment(_dm, compress_ratio)
+                        dm_size.append(_dm)
+
                     hm = self._generate_hm(64, 64, dress_type, new_j, 64, train_weights[i])
                 else:
                     new_j = self._relative_joints(cbox, padd, joints, to_size=64)
                     hm = self._generate_hm(64, 64, dress_type, new_j, 64, train_weights[i])
 
                 # rotate augmentation
-                img, hm, dm = self._rotate_augment(img, hm, dm)
-
+                img, r_angle = self._rotate_augment(img)
+                hm = self.rotate(hm, r_angle)
+                for _dm in dm_size:
+                        _dm = self.rotate(_dm, r_angle)
+                        dm.append(_dm)
                 for elem in range(len(train_weights[i])):
                     if train_weights[i][elem] == 1:
                         loss_weights[i][elem] = 1
@@ -655,23 +682,6 @@ class DataGenerator():
         else:
             print('Color mode supported: RGB/BGR. If you need another mode do it yourself :p')
 
-    def open_dm(self, name, color='GRAY'):
-        """ Open an dm
-        Args:
-            name	: Name of the sample
-            color	: Color Mode (RGB/BGR/GRAY)
-        """
-        dm = cv2.imread(os.path.join(self.dm_dir, name))
-        if color == 'RGB':
-            dm = cv2.cvtColor(dm, cv2.COLOR_BGR2RGB)
-            return dm
-        elif color == 'BGR':
-            return dm
-        elif color == 'GRAY':
-            dm = cv2.cvtColor(dm, cv2.COLOR_BGR2GRAY)
-            return dm
-        else:
-            print('Color mode supported: RGB/BGR. If you need another mode do it yourself :p')
 
     def plot_img(self, name, plot='cv2'):
         """ Plot an image

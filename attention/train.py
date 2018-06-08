@@ -83,7 +83,7 @@ def train():
     dataset = DataGenerator(params['total_joints_list'], params['blouse_joints_list'], params['dress_joints_list'],
                             params['outwear_joints_list'], params['skirt_joints_list'], params['trousers_joints_list'],
                             params['blouse_index'], params['dress_index'], params['outwear_index'], params['skirt_index'],
-                            params['trousers_index'], params['img_directory'], params['training_data_file'])
+                            params['trousers_index'], params['img_directory'], params['training_data_file'],params['dm_dir'])
     dataset.generate_set(rand=True, validationRate=0.15)
 
     generator = dataset.generator(batchSize=FLAGS.batch_size, norm=False, sample='train')
@@ -121,7 +121,7 @@ def train():
         init_op = tf.global_variables_initializer()
         sess.run(init_op)
 
-        
+        '''
         # Restore pretrained weights
         if FLAGS.pretrained_model != '':
             if FLAGS.pretrained_model.endswith('.pkl'):
@@ -141,7 +141,7 @@ def train():
                     with tf.variable_scope('', reuse=True):
                         var = tf.get_variable(variable.name.split(':0')[0])
                         print(variable.name, np.mean(sess.run(var)))
-        
+        '''
 
         for training_itr in range(FLAGS.training_iters):
             t1 = time.time()
@@ -160,13 +160,6 @@ def train():
             else:
                 batch_x_np -= 128.0
 
-            '''
-            # Generate heatmaps from joints
-            batch_gt_heatmap_np = cpm_utils.make_heatmaps_from_joints(FLAGS.input_size,
-                                                                      FLAGS.heatmap_size,
-                                                                      FLAGS.joint_gaussian_variance,
-                                                                      batch_joints_np)
-            '''
             # Forward and update weights
             stage_losses_np, total_loss_np, _, summaries, current_lr, \
             stage_heatmap_np, stage_dm, global_step = sess.run([model.stage_loss,
@@ -259,10 +252,6 @@ def train():
                     # Normalize images
                     batch_x_np = batch_x_np / 255.0 - 0.5
 
-                    #batch_gt_heatmap_np = cpm_utils.make_heatmaps_from_joints(FLAGS.input_size,
-                    #                                                          FLAGS.heatmap_size,
-                    #                                                          FLAGS.joint_gaussian_variance,
-                    #                                                          batch_joints_np)
                     total_loss_np, summaries = sess.run([model.total_loss, merged_summary],
                                                         feed_dict={model.input_images: batch_x_np,
                                                                    model.cmap_placeholder: batch_centermap,
