@@ -448,7 +448,7 @@ class DataGenerator():
             
             dm_x = resized_dm_shape[0]
             dm_y = resized_dm_shape[1]
-            dm2 = np.zeros((512, 512, 3), dtype=np.float32)
+            dm2 = np.zeros((512, 512), dtype=np.float32)
             dm_x_padding = (512 - dm_x) // 2
             dm_y_padding = (512 - dm_y) // 2
             dm2[dm_x_padding:dm_x_padding + dm_x, dm_y_padding:dm_y_padding + dm_y] = resized_dm[:, :]
@@ -457,7 +457,7 @@ class DataGenerator():
         else:
             dm_x = resized_dm_shape[0]
             dm_y = resized_dm_shape[1]
-            dm2 = np.zeros((512, 512, 3), dtype=np.float32)
+            dm2 = np.zeros((512, 512), dtype=np.float32)
             dm_x_padding = (512 - dm_x) // 2
             dm_y_padding = (512 - dm_y) // 2
             dm2[dm_x_padding:dm_x_padding + dm_x, dm_y_padding:dm_y_padding + dm_y] = resized_dm[:, :]
