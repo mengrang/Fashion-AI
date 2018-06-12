@@ -231,6 +231,7 @@ def mobilenet_v1_base(inputs,
     padding = 'VALID'
   with tf.variable_scope(scope, 'MobilenetV1', [inputs]):
     with slim.arg_scope([slim.conv2d, slim.separable_conv2d], padding=padding):
+      
       # The current_stride variable keeps track of the output stride of the
       # activations, i.e., the running product of convolution strides up to the
       # current network layer. This allows us to invoke atrous convolution
