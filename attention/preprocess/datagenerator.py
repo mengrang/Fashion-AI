@@ -619,9 +619,11 @@ class DataGenerator():
                 if random.choice([0, 1]) == 1:
                     new_j = self._relative_joints(cbox, padd, joints, to_size=512)
                     img, new_j, train_weights[i],compress_ratio = self._size_augment(img, new_j, train_weights[i], 0.7, 1.35)
-                    for i in range(1,25):
-                        _dm = cv2.imread(os.path.join(self.dm_dir, 'heat' + str(i) + '.png'),0)
+                    for k in range(1,25):
+                        _dm = cv2.imread(os.path.join(self.dm_dir, 'heat' + str(k) + '.png'),0)
+                        
                         _dm = self._dm_size_augment(_dm, compress_ratio)
+                        _dm = cv2.resize(_dm,(64,64))
                         dm_size.append(_dm)
 
                     hm = self._generate_hm(64, 64, dress_type, new_j, 64, train_weights[i])
@@ -635,6 +637,7 @@ class DataGenerator():
                 for _dm in dm_size:
                         _dm = self.rotate(_dm, r_angle)
                         dm.append(_dm)
+                dm.append(dm)
                 for elem in range(len(train_weights[i])):
                     if train_weights[i][elem] == 1:
                         loss_weights[i][elem] = 1

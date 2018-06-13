@@ -26,7 +26,6 @@ def normalization():
 
 if __name__ == "__main__":
     # test()
-    resize_dm()
     normalization()
 
     

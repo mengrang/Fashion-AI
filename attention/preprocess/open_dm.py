@@ -9,13 +9,15 @@ def open_dm(dm_dir, color='GRAY'):
             color	: Color Mode (RGB/BGR/GRAY)
         """
         dm_list = []
-        for i in range(1, 25):
-            dm = cv2.imread(os.path.join(dm_dir, 'heat'+str(i)+'.png'), 0)
-            # cv2.imshow(file,dm)
-            # cv2.waitKey()
-            # dm = np.array(dm)
-            dm_list.append(dm)
-            print(dm_list)
+        for root, dirs, files in os.walk(dm_dir):
+            for file in files:
+                
+                dm = cv2.imread(os.path.join(dm_dir, file),0)
+                # cv2.imshow(file,dm)
+                # cv2.waitKey()
+                # dm = np.array(dm)
+                dm_list.append(dm)
+        print(dm_list[1])
         
 if __name__ == '__main__':
     open_dm('/home/hongyvsvxinlang/PycharmProjects/ubuntu/tcfkd/attention/preprocess/dm_norm')
